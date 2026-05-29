@@ -632,8 +632,8 @@ class UIManager {
     ctx.shadowBlur=30; ctx.shadowColor=winner?winner.char.glowColor:'#ffffff'; ctx.fillStyle=winner?winner.char.glowColor:'#ffffff';
     ctx.font=`bold ${Math.floor(46*pulse)}px 'Orbitron',monospace`; ctx.fillText(winner?winner.char.name:'DRAW!',cx,cy-20);
     ctx.shadowBlur=15; ctx.fillStyle='#00ffff'; ctx.font="bold 24px 'Orbitron',monospace"; ctx.fillText('WINS!',cx,cy+30); ctx.shadowBlur=0;
-    this._btn(ctx,cx-90,cy+80,160,40,'REMATCH','#8800ff','#00ffff');
-    this._btn(ctx,cx+90,cy+80,160,40,'MENU','#440066','#8800ff');
+    this._btn(ctx,this._rb.cx,this._rb.cy,this._rb.w,this._rb.h,'REMATCH','#8800ff','#00ffff');
+    this._btn(ctx,this._mb.cx,this._mb.cy,this._mb.w,this._mb.h,'MENU','#440066','#8800ff');
   }
   _btn(ctx,cx,cy,w,h,label,bg,border) {
     ctx.save(); ctx.fillStyle=bg+'aa'; ctx.strokeStyle=border; ctx.lineWidth=2;
@@ -663,7 +663,7 @@ class UIManager {
   }
   getVirtualRegions(w,h) {
     const dpx=80,dpy=h-70,bx=w-80,by=h-70;
-    return [{id:'up',cx:dpx,cy:dpy-34,r:14},{id:'down',cx:dpx,cy:dpy+34,r:14},{id:'left',cx:dpx-34,cy:dpy,r:14},{id:'right',cx:dpx+34,cy:dpy,r:14},{id:'attack',cx:bx,cy:by-40,r:22},{id:'special1',cx:bx-45,cy:by+10,r:22},{id:'special2',cx:bx+45,cy:by+10,r:22},{id:'block',cx:bx,cy:by+50,r:22}];
+    return [{id:'up',cx:dpx,cy:dpy-38,r:28},{id:'down',cx:dpx,cy:dpy+38,r:28},{id:'left',cx:dpx-38,cy:dpy,r:28},{id:'right',cx:dpx+38,cy:dpy,r:28},{id:'attack',cx:bx,cy:by-50,r:36},{id:'special1',cx:bx-55,cy:by+5,r:32},{id:'special2',cx:bx+55,cy:by+5,r:32},{id:'block',cx:bx,cy:by+58,r:30}];
   }
 }
 
@@ -683,6 +683,7 @@ class GameEngine {
     this.announceText=''; this.announceSubText=''; this.winner=null;
     this.aiThinkTimer=0; this.aiAction=null;
     this.selectedMode='p1';
+    this._rb={cx:0,cy:0,w:160,h:48}; this._mb={cx:0,cy:0,w:160,h:48};
     this.audio.init();
     this._bindTouchAndClick();
   }
@@ -694,10 +695,13 @@ class GameEngine {
       regions.forEach(r=>this.input.setTouch(r.id,false));
       for(const t of Array.from(touches)){const p=pos(null,t);for(const r of regions){if(Math.hypot(p.x-r.cx,p.y-r.cy)<=r.r)this.input.setTouch(r.id,true);}}
     };
-    this.canvas.addEventListener('touchstart',e=>{e.preventDefault();applyTouches(e.touches);this.audio.resume();},{passive:false});
-    this.canvas.addEventListener('touchmove',e=>{e.preventDefault();applyTouches(e.touches);},{passive:false});
-    this.canvas.addEventListener('touchend',e=>{e.preventDefault();applyTouches(e.touches);},{passive:false});
-    this.canvas.addEventListener('touchcancel',e=>{e.preventDefault();applyTouches(e.touches);},{passive:false});
+    this.canvas.addEventListener('touchstart',e=>{e.preventDefault();this.audio.resume();
+      if(this.screen==='battle'){applyTouches(e.touches);}
+      else{const t=e.touches[0];if(t){const r=this.canvas.getBoundingClientRect(),sx=this.canvas.width/r.width,sy=this.canvas.height/r.height;this._handleClick((t.clientX-r.left)*sx,(t.clientY-r.top)*sy);}}
+    },{passive:false});
+    this.canvas.addEventListener('touchmove',e=>{e.preventDefault();if(this.screen==='battle')applyTouches(e.touches);},{passive:false});
+    this.canvas.addEventListener('touchend',e=>{e.preventDefault();if(this.screen==='battle')applyTouches(e.touches);},{passive:false});
+    this.canvas.addEventListener('touchcancel',e=>{e.preventDefault();if(this.screen==='battle')applyTouches(e.touches);},{passive:false});
     this.canvas.addEventListener('click',e=>{
       const r=this.canvas.getBoundingClientRect(),sx=this.canvas.width/r.width,sy=this.canvas.height/r.height;
       this._handleClick((e.clientX-r.left)*sx,(e.clientY-r.top)*sy);
@@ -724,8 +728,8 @@ class GameEngine {
       ['initiate','knight','god'].forEach((d,i)=>{const bx=cx-120+i*120;if(mx>bx-50&&mx<bx+50&&my>cy+133&&my<cy+155)this.difficulty=d;});
     } else if(this.screen==='victory'){
       const cy2=this.canvas.height/2;
-      if(mx>cx-170&&mx<cx-10&&my>cy2+60&&my<cy2+100)this._startBattle();
-      if(mx>cx+10&&mx<cx+170&&my>cy2+60&&my<cy2+100)this._goTitle();
+      if(mx>this._rb.cx-80&&mx<this._rb.cx+80&&my>this._rb.cy-24&&my<this._rb.cy+24)this._startBattle();
+      if(mx>this._mb.cx-80&&mx<this._mb.cx+80&&my>this._mb.cy-24&&my<this._mb.cy+24)this._goTitle();
     }
   }
   _goTitle(){this.screen='title';this.titleTime=0;this.audio.stopBGM();this.p1=null;this.p2=null;this.particles.clear();this.roundState={p1Wins:0,p2Wins:0,round:1};}
@@ -808,7 +812,7 @@ class GameEngine {
   }
   _checkMatchEnd(){
     const{p1Wins,p2Wins}=this.roundState;
-    if(p1Wins>=2||p2Wins>=2){this.screen='victory';this.ui.resetTime();}
+    if(p1Wins>=2||p2Wins>=2){this.screen='victory';this.ui.resetTime();const cx=this.canvas.width/2,cy=this.canvas.height/2;this._rb={cx:cx-100,cy:cy+100,w:160,h:48};this._mb={cx:cx+100,cy:cy+100,w:160,h:48};}
     else{this.roundState.round++;this._startBattle();}
   }
   _updateAI(ai,player){
