@@ -985,12 +985,15 @@ class GameEngine {
     if(p){ang=(ang+1)%360;const ri=document.getElementById('ri');if(ri)ri.style.transform='rotate('+(Math.sin(ang*0.05)*25-45)+'deg)';}
   },80);
   // Rotate overlay
-  const ov=document.createElement('div');
-  ov.style.cssText='position:fixed;top:0;left:0;width:100%;height:100%;background:#020008;z-index:9999;display:none;flex-direction:column;align-items:center;justify-content:center;';
-  ov.innerHTML='<div id="ri" style="font-size:72px;">&#128241;</div><div style="color:#00ffff;font-size:20px;font-weight:bold;margin-top:16px;letter-spacing:3px;">ROTATE DEVICE</div><div style="color:#8800ff;font-size:12px;margin-top:8px;letter-spacing:2px;">LANDSCAPE MODE REQUIRED</div>';
-  document.body.appendChild(ov);
-  let ang=0;
-  setInterval(()=>{const p=window.innerHeight>window.innerWidth;ov.style.display=p?'flex':'none';if(p){ang++;const ri=document.getElementById('ri');if(ri)ri.style.transform='rotate('+(Math.sin(ang*0.05)*25-45)+'deg)';}},80);
+  if(!document.getElementById('rotateOv')){
+    const ov=document.createElement('div');
+    ov.id='rotateOv';
+    ov.style.cssText='position:fixed;top:0;left:0;width:100%;height:100%;background:#020008;z-index:9999;display:none;flex-direction:column;align-items:center;justify-content:center;';
+    ov.innerHTML='<div id="ri" style="font-size:72px;display:inline-block;">&#128241;</div><div style="color:#00ffff;font-size:20px;font-weight:bold;margin-top:16px;letter-spacing:3px;">ROTATE DEVICE</div><div style="color:#8800ff;font-size:12px;margin-top:8px;letter-spacing:2px;">LANDSCAPE MODE REQUIRED</div>';
+    document.body.appendChild(ov);
+    let ang=0;
+    setInterval(()=>{const p=window.innerHeight>window.innerWidth;ov.style.display=p?'flex':'none';if(p){ang++;const ri=document.getElementById('ri');if(ri)ri.style.transform='rotate('+(Math.sin(ang*0.05)*25-45)+'deg)';}},80);
+  }
   const canvas = document.getElementById('gameCanvas');
   function getSize() {
     const aspect=16/9,ww=window.innerWidth,wh=window.innerHeight;
