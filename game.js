@@ -667,7 +667,6 @@ class UIManager {
     const R=Math.floor(h*0.1),dpx=Math.floor(w*0.09),dpy=Math.floor(h*0.74);
     const Ra=Math.floor(h*0.12),Rs=Math.floor(h*0.1),bx=Math.floor(w*0.91),by=Math.floor(h*0.67);
     return [{id:'up',cx:dpx,cy:dpy-R*1.5,r:R+4},{id:'down',cx:dpx,cy:dpy+R*1.5,r:R+4},{id:'left',cx:dpx-R*1.5,cy:dpy,r:R+4},{id:'right',cx:dpx+R*1.5,cy:dpy,r:R+4},{id:'attack',cx:bx,cy:by-Rs*2,r:Ra+4},{id:'special1',cx:bx-Ra*1.6,cy:by+Rs*0.4,r:Rs+4},{id:'special2',cx:bx+Ra*1.6,cy:by+Rs*0.4,r:Rs+4},{id:'block',cx:bx,cy:by+Rs*2.4,r:Rs+4}];
-  },{id:'down',cx:dpx,cy:dpy+38,r:28},{id:'left',cx:dpx-38,cy:dpy,r:28},{id:'right',cx:dpx+38,cy:dpy,r:28},{id:'attack',cx:bx,cy:by-50,r:36},{id:'special1',cx:bx-55,cy:by+5,r:32},{id:'special2',cx:bx+55,cy:by+5,r:32},{id:'block',cx:bx,cy:by+58,r:30}];
   }
 }
 
