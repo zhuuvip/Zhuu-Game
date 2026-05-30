@@ -713,6 +713,7 @@ class GameEngine {
   _handleClick(mx,my) {
     const cx=this.canvas.width/2,cy=this.canvas.height/2;
     if(this.screen==='title'){
+      const w=this.canvas.width,h=this.canvas.height;
       const bw5=Math.min(240,w*0.38),bh5=h*0.11;
       if(mx>cx-bw5/2&&mx<cx+bw5/2&&my>h*0.62-bh5/2&&my<h*0.62+bh5/2){this.gameMode='vs_cpu';this._goCharSelect();return;}
       if(mx>cx-bw5/2&&mx<cx+bw5/2&&my>h*0.75-bh5/2&&my<h*0.75+bh5/2){this.gameMode='2player';this._goCharSelect();return;}
