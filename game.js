@@ -642,28 +642,32 @@ class UIManager {
   }
   drawVirtualControls(ctx) {
     ctx.save(); ctx.globalAlpha=0.55;
-    const dpx=80,dpy=this.h-70; this._drawDPad(ctx,dpx,dpy);
-    const bx=this.w-80,by=this.h-70; this._drawActions(ctx,bx,by);
+    const R=Math.floor(this.h*0.1),dpx=Math.floor(this.w*0.09),dpy=Math.floor(this.h*0.74);
+    const Ra=Math.floor(this.h*0.12),Rs=Math.floor(this.h*0.1),bx=Math.floor(this.w*0.91),by=Math.floor(this.h*0.67);
+    this._drawDPad(ctx,dpx,dpy,R);
+    this._drawActions(ctx,bx,by,Ra,Rs);
     ctx.restore();
   }
-  _drawDPad(ctx,cx,cy) {
-    [{dx:0,dy:-34,label:'▲'},{dx:0,dy:34,label:'▼'},{dx:-34,dy:0,label:'◄'},{dx:34,dy:0,label:'►'}].forEach(b=>{
+  _drawDPad(ctx,cx,cy,R=28) {
+    [{dx:0,dy:-R*1.5,label:'▲'},{dx:0,dy:R*1.5,label:'▼'},{dx:-R*1.5,dy:0,label:'◄'},{dx:R*1.5,dy:0,label:'►'}].forEach(b=>{
       ctx.fillStyle='rgba(0,0,0,0.7)'; ctx.strokeStyle='#8800ff'; ctx.lineWidth=1.5;
-      ctx.beginPath(); ctx.arc(cx+b.dx,cy+b.dy,14,0,Math.PI*2); ctx.fill(); ctx.stroke();
-      ctx.fillStyle='#8800ff'; ctx.font='14px monospace'; ctx.textAlign='center'; ctx.fillText(b.label,cx+b.dx,cy+b.dy+5);
+      ctx.beginPath(); ctx.arc(cx+b.dx,cy+b.dy,R,0,Math.PI*2); ctx.fill(); ctx.stroke();
+      ctx.fillStyle='#cc88ff'; ctx.font=`bold ${Math.floor(R*0.85)}px monospace`; ctx.textAlign='center'; ctx.fillText(b.label,cx+b.dx,cy+b.dy+R*0.33);
     });
   }
-  _drawActions(ctx,cx,cy) {
-    [{dx:0,dy:-40,label:'ATK',color:'#00ffff'},{dx:-45,dy:10,label:'SP1',color:'#8800ff'},{dx:45,dy:10,label:'SP2',color:'#ff00ff'},{dx:0,dy:50,label:'BLK',color:'#004488'}].forEach(b=>{
+  _drawActions(ctx,cx,cy,Ra=32,Rs=26) {
+    [{dx:0,dy:-Rs*2,label:'ATK',color:'#00ffff',r:Ra},{dx:-Ra*1.6,dy:Rs*0.4,label:'SP1',color:'#8800ff',r:Rs},{dx:Ra*1.6,dy:Rs*0.4,label:'SP2',color:'#ff00ff',r:Rs},{dx:0,dy:Rs*2.4,label:'BLK',color:'#0066aa',r:Rs}].forEach(b=>{
       ctx.fillStyle=b.color+'33'; ctx.strokeStyle=b.color; ctx.lineWidth=2;
       ctx.shadowBlur=6; ctx.shadowColor=b.color;
-      ctx.beginPath(); ctx.arc(cx+b.dx,cy+b.dy,22,0,Math.PI*2); ctx.fill(); ctx.stroke(); ctx.shadowBlur=0;
-      ctx.fillStyle='#fff'; ctx.font="bold 9px 'Orbitron',monospace"; ctx.textAlign='center'; ctx.fillText(b.label,cx+b.dx,cy+b.dy+4);
+      ctx.beginPath(); ctx.arc(cx+b.dx,cy+b.dy,b.r||Rs,0,Math.PI*2); ctx.fill(); ctx.stroke(); ctx.shadowBlur=0;
+      ctx.fillStyle='#fff'; ctx.font=`bold ${Math.floor((b.r||Rs)*0.42)}px 'Orbitron',monospace`; ctx.textAlign='center'; ctx.fillText(b.label,cx+b.dx,cy+b.dy+(b.r||Rs)*0.16);
     });
   }
   getVirtualRegions(w,h) {
-    const dpx=80,dpy=h-70,bx=w-80,by=h-70;
-    return [{id:'up',cx:dpx,cy:dpy-38,r:28},{id:'down',cx:dpx,cy:dpy+38,r:28},{id:'left',cx:dpx-38,cy:dpy,r:28},{id:'right',cx:dpx+38,cy:dpy,r:28},{id:'attack',cx:bx,cy:by-50,r:36},{id:'special1',cx:bx-55,cy:by+5,r:32},{id:'special2',cx:bx+55,cy:by+5,r:32},{id:'block',cx:bx,cy:by+58,r:30}];
+    const R=Math.floor(h*0.1),dpx=Math.floor(w*0.09),dpy=Math.floor(h*0.74);
+    const Ra=Math.floor(h*0.12),Rs=Math.floor(h*0.1),bx=Math.floor(w*0.91),by=Math.floor(h*0.67);
+    return [{id:'up',cx:dpx,cy:dpy-R*1.5,r:R+4},{id:'down',cx:dpx,cy:dpy+R*1.5,r:R+4},{id:'left',cx:dpx-R*1.5,cy:dpy,r:R+4},{id:'right',cx:dpx+R*1.5,cy:dpy,r:R+4},{id:'attack',cx:bx,cy:by-Rs*2,r:Ra+4},{id:'special1',cx:bx-Ra*1.6,cy:by+Rs*0.4,r:Rs+4},{id:'special2',cx:bx+Ra*1.6,cy:by+Rs*0.4,r:Rs+4},{id:'block',cx:bx,cy:by+Rs*2.4,r:Rs+4}];
+  },{id:'down',cx:dpx,cy:dpy+38,r:28},{id:'left',cx:dpx-38,cy:dpy,r:28},{id:'right',cx:dpx+38,cy:dpy,r:28},{id:'attack',cx:bx,cy:by-50,r:36},{id:'special1',cx:bx-55,cy:by+5,r:32},{id:'special2',cx:bx+55,cy:by+5,r:32},{id:'block',cx:bx,cy:by+58,r:30}];
   }
 }
 
@@ -711,10 +715,13 @@ class GameEngine {
   _handleClick(mx,my) {
     const cx=this.canvas.width/2,cy=this.canvas.height/2;
     if(this.screen==='title'){
-      if(mx>cx-110&&mx<cx+110&&my>cy+22&&my<cy+66){this.gameMode='vs_cpu';this._goCharSelect();}
-      if(mx>cx-110&&mx<cx+110&&my>cy+82&&my<cy+126){this.gameMode='2player';this._goCharSelect();}
-      // difficulty
-      ['initiate','knight','god'].forEach((d,i)=>{const bx=cx-120+i*120;if(mx>bx-50&&mx<bx+50&&my>cy+162&&my<cy+188)this.difficulty=d;});
+      const bw5=Math.min(240,w*0.38),bh5=h*0.11;
+      if(mx>cx-bw5/2&&mx<cx+bw5/2&&my>h*0.62-bh5/2&&my<h*0.62+bh5/2){this.gameMode='vs_cpu';this._goCharSelect();return;}
+      if(mx>cx-bw5/2&&mx<cx+bw5/2&&my>h*0.75-bh5/2&&my<h*0.75+bh5/2){this.gameMode='2player';this._goCharSelect();return;}
+      ['initiate','knight','god'].forEach((d,i)=>{
+        const bx=cx+(i-1)*w*0.22,dw=w*0.18,dh=h*0.08;
+        if(mx>bx-dw/2&&mx<bx+dw/2&&my>h*0.87&&my<h*0.87+dh) this.difficulty=d;
+      });
     } else if(this.screen==='charSelect'){
       const cardW=160,startX=cx-((CHARACTERS.length*(cardW+20))/2)+cardW/2;
       CHARACTERS.forEach((c,i)=>{
@@ -876,8 +883,9 @@ class GameEngine {
     ctx.save();ctx.globalAlpha=0.05;ctx.fillStyle='#000';for(let y=0;y<h;y+=3)ctx.fillRect(0,y,w,1);ctx.restore();
     // Mode select text
     const ps=0.6+0.4*Math.sin(t*0.08);ctx.save();ctx.globalAlpha=ps;ctx.textAlign='center';ctx.font="bold 14px 'Orbitron',monospace";ctx.fillStyle='#8800ff';ctx.shadowBlur=10;ctx.shadowColor='#8800ff';ctx.fillText('— SELECT GAME MODE —',cx,cy+18);ctx.shadowBlur=0;ctx.restore();
-    this._menuBtn(ctx,cx,cy+45,220,44,'VS CPU','#00ffff','#8800ff');
-    this._menuBtn(ctx,cx,cy+105,220,44,'2 PLAYER','#8800ff','#00ffff');
+    const bw2=Math.min(240,w*0.38),bh2=Math.floor(h*0.11);
+    this._menuBtn(ctx,cx,h*0.62,bw2,bh2,'VS CPU','#00ffff','#8800ff');
+    this._menuBtn(ctx,cx,h*0.75,bw2,bh2,'2 PLAYER','#8800ff','#00ffff');
     ctx.save();ctx.textAlign='center';ctx.font="10px 'Orbitron',monospace";ctx.fillStyle='rgba(0,255,255,0.5)';ctx.fillText('CPU DIFFICULTY:',cx,cy+155);
     ['INITIATE','KNIGHT','GOD'].forEach((d,i)=>{
       const bx=cx-120+i*120,active=this.difficulty===['initiate','knight','god'][i];
@@ -967,11 +975,28 @@ class GameEngine {
 
 // ─── BOOTSTRAP ──────────────────────────────────────────────────────────────
 (function() {
+  const ov=document.createElement('div');
+  ov.style.cssText='position:fixed;top:0;left:0;width:100%;height:100%;background:#020008;z-index:9999;display:none;flex-direction:column;align-items:center;justify-content:center;';
+  ov.innerHTML='<div style="font-size:64px;transition:transform 0.5s" id="ri">📱</div><div style="color:#00ffff;font-size:20px;font-weight:bold;margin-top:16px;letter-spacing:3px;">ROTATE DEVICE</div><div style="color:#8800ff;font-size:12px;margin-top:8px;letter-spacing:2px;">LANDSCAPE MODE REQUIRED</div>';
+  document.body.appendChild(ov);
+  let ang=0;
+  setInterval(()=>{
+    const p=window.innerHeight>window.innerWidth;
+    ov.style.display=p?'flex':'none';
+    if(p){ang=(ang+1)%360;const ri=document.getElementById('ri');if(ri)ri.style.transform='rotate('+(Math.sin(ang*0.05)*25-45)+'deg)';}
+  },80);
+  // Rotate overlay
+  const ov=document.createElement('div');
+  ov.style.cssText='position:fixed;top:0;left:0;width:100%;height:100%;background:#020008;z-index:9999;display:none;flex-direction:column;align-items:center;justify-content:center;';
+  ov.innerHTML='<div id="ri" style="font-size:72px;">&#128241;</div><div style="color:#00ffff;font-size:20px;font-weight:bold;margin-top:16px;letter-spacing:3px;">ROTATE DEVICE</div><div style="color:#8800ff;font-size:12px;margin-top:8px;letter-spacing:2px;">LANDSCAPE MODE REQUIRED</div>';
+  document.body.appendChild(ov);
+  let ang=0;
+  setInterval(()=>{const p=window.innerHeight>window.innerWidth;ov.style.display=p?'flex':'none';if(p){ang++;const ri=document.getElementById('ri');if(ri)ri.style.transform='rotate('+(Math.sin(ang*0.05)*25-45)+'deg)';}},80);
   const canvas = document.getElementById('gameCanvas');
   function getSize() {
-    const aspect=960/540,ww=window.innerWidth,wh=window.innerHeight;
-    if(ww/wh>aspect){const h=Math.min(wh,540);return{w:Math.floor(h*aspect),h:Math.floor(h)};}
-    const w=Math.min(ww,960); return{w:Math.floor(w),h:Math.floor(w/aspect)};
+    const aspect=16/9,ww=window.innerWidth,wh=window.innerHeight;
+    const w=Math.min(ww,wh*aspect,960),h=Math.floor(w/aspect);
+    return{w:Math.floor(w),h:Math.floor(h)};
   }
   const{w,h}=getSize(); canvas.width=w; canvas.height=h;
   const engine=new GameEngine(canvas);
