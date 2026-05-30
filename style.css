@@ -13,8 +13,6 @@ canvas {
   display: block;
   position: fixed;
   top: 0; left: 0;
-  width: 100vw !important;
-  height: 100vh !important;
   touch-action: none;
   -webkit-tap-highlight-color: transparent;
   user-select: none;

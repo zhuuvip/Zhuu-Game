@@ -692,7 +692,7 @@ class GameEngine {
   }
   _bindTouchAndClick() {
     const getR=()=>this.ui.getVirtualRegions(this.canvas.width,this.canvas.height);
-    const pos=(e,t)=>{const r=this.canvas.getBoundingClientRect(),sx=this.canvas.width/r.width,sy=this.canvas.height/r.height;return{x:(t.clientX-r.left)*sx,y:(t.clientY-r.top)*sy};};
+    const pos=(e,t)=>{return{x:t.clientX,y:t.clientY};};
     const applyTouches=(touches)=>{
       const regions=getR();
       regions.forEach(r=>this.input.setTouch(r.id,false));
@@ -700,14 +700,13 @@ class GameEngine {
     };
     this.canvas.addEventListener('touchstart',e=>{e.preventDefault();this.audio.resume();
       if(this.screen==='battle'){applyTouches(e.touches);}
-      else{const t=e.touches[0];if(t){const r=this.canvas.getBoundingClientRect(),sx=this.canvas.width/r.width,sy=this.canvas.height/r.height;this._handleClick((t.clientX-r.left)*sx,(t.clientY-r.top)*sy);}}
+      else{const t=e.touches[0];if(t){this._handleClick(t.clientX,t.clientY);}}
     },{passive:false});
     this.canvas.addEventListener('touchmove',e=>{e.preventDefault();if(this.screen==='battle')applyTouches(e.touches);},{passive:false});
     this.canvas.addEventListener('touchend',e=>{e.preventDefault();if(this.screen==='battle')applyTouches(e.touches);},{passive:false});
     this.canvas.addEventListener('touchcancel',e=>{e.preventDefault();if(this.screen==='battle')applyTouches(e.touches);},{passive:false});
     this.canvas.addEventListener('click',e=>{
-      const r=this.canvas.getBoundingClientRect(),sx=this.canvas.width/r.width,sy=this.canvas.height/r.height;
-      this._handleClick((e.clientX-r.left)*sx,(e.clientY-r.top)*sy);
+      this._handleClick(e.clientX,e.clientY);
       this.audio.resume();
     });
   }
@@ -993,12 +992,12 @@ class GameEngine {
     return {w: window.innerWidth, h: window.innerHeight};
   }
   const{w,h}=getSize(); canvas.width=w; canvas.height=h;
-  canvas.style.cssText='position:fixed;top:0;left:0;';
+  canvas.style.width=canvas.width+"px";canvas.style.height=canvas.height+"px";
   const engine=new GameEngine(canvas);
   engine.start();
   window.addEventListener('resize',()=>{
     const{w:nw,h:nh}=getSize();
     engine.resize(nw,nh);
-    canvas.style.cssText='position:fixed;top:0;left:0;';
+    canvas.style.width=canvas.width+"px";canvas.style.height=canvas.height+"px";
   });
 })();
