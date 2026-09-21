@@ -4,3 +4,7 @@ html,body{background:#05060f;overscroll-behavior:none}
 .bg-anim{background:linear-gradient(120deg,#05060f,#1e0b45,#04141f,#05060f);background-size:300% 300%;animation:shift 14s ease infinite}
 .grid-bg{background-image:linear-gradient(#22d3ee14 1px,transparent 1px),linear-gradient(90deg,#22d3ee14 1px,transparent 1px);background-size:44px 44px}
 .neon{text-shadow:0 0 18px #22d3ee99,0 0 40px #a855f766}
+html,body{overflow-x:hidden;-webkit-tap-highlight-color:transparent}
+@keyframes rot{0%,20%{transform:rotate(0)}60%,100%{transform:rotate(-90deg)}}
+.rotate-phone{animation:rot 2.4s ease-in-out infinite}
+@keyframes load{0%{transform:translateX(-100%)}100%{transform:translateX(250%)}}

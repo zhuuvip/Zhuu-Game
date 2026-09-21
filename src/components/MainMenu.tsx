@@ -5,9 +5,9 @@ export default function MainMenu({ onPlay, settings, setSettings, wins, losses, 
   const [open, setOpen] = useState(false)
   const btn = 'w-64 rounded border border-cyan-400/50 bg-white/5 py-3 text-center font-black tracking-widest hover:bg-cyan-400 hover:text-black'
   return (
-    <div className="bg-anim grid-bg grid min-h-screen place-items-center p-4 text-center">
+    <div className="bg-anim grid-bg grid min-h-[100dvh] place-items-center p-4 text-center" style={{ paddingLeft: "max(1rem,env(safe-area-inset-left))", paddingRight: "max(1rem,env(safe-area-inset-right))" }}>
       <div>
-        <h1 className="neon mb-1 text-5xl font-black italic tracking-widest md:text-7xl">NEON CLASH</h1>
+        <h1 className="neon mb-1 text-5xl font-black italic tracking-widest md:text-7xl">ZHUU CLASH</h1>
         <p className="mb-6 text-xs text-white/60">Record {wins}W - {losses}L · {total} matches</p>
         {!open ? (
           <div className="flex flex-col items-center gap-3">

@@ -4,8 +4,8 @@ import { Particles } from './Particles'
 import { AudioManager } from './Audio'
 import type { Settings } from '../utils/storage'
 
-export const W = 960, H = 540
-const WORLD = 1300, FLOOR = 470, GRAV = 1900
+export const H = 540
+const WORLD = 1300, FLOOR = 390, GRAV = 1900
 type K = 'atk' | 's1' | 's2' | 'ult'
 type Ctl = { left: boolean; right: boolean; jump: boolean; block: boolean; atk: boolean; s1: boolean; s2: boolean; ult: boolean }
 interface Fx { def: FighterDef; x: number; y: number; vx: number; vy: number; face: 1 | -1; hp: number; ult: number; state: string; move: Move | null; mk: string; st: number; mt: number; hit: boolean; cd: Record<string, number>; stun: number; block: boolean; ground: boolean; combo: number; comboT: number; wins: number; ko: boolean; ai: { t: number; act: string } }
@@ -17,12 +17,13 @@ const NEUTRAL = (): Ctl => ({ left: false, right: false, jump: false, block: fal
 export class GameEngine {
   in1 = new Input(); in2 = new Input(); parts = new Particles(); audio = new AudioManager()
   paused = false
+  private vw = 960; private s = 1; private ox = 0; private oy = 0; private q = 1
   private g: CanvasRenderingContext2D
   private f: [Fx, Fx]
   private phase: 'intro' | 'fight' | 'ko' | 'round' | 'done' = 'intro'
   private pt = 3.8; private timer = 60; private round = 1; private t = 0; private raf = 0; private last = 0
   private winner: Fx | null = null
-  private cam = { x: (WORLD - W) / 2, zoom: 1, shake: 0 }
+  private cam = { x: (WORLD - 960) / 2, zoom: 1, shake: 0 }
   private zoomT = 0; private hitstop = 0; private flash = 0
   private texts: { x: number; y: number; s: string; life: number; c: string }[] = []
   private rings: { x: number; y: number; r: number; life: number; c: string }[] = []
@@ -31,6 +32,7 @@ export class GameEngine {
   constructor(private cv: HTMLCanvasElement, private cfg: Cfg) {
     this.g = cv.getContext('2d')!
     this.audio.vol = cfg.settings.sfx
+    this.q = cfg.settings.quality * ((navigator.hardwareConcurrency || 8) <= 4 ? .6 : 1)
     this.f = [mkF(cfg.p1, 450, 1), mkF(cfg.p2, 850, -1)]
     let s = 7; const r = () => (s = (s * 16807) % 2147483647) / 2147483647
     for (const [f, c, n, mh] of [[.15, '#0d0b24', '#7c3aed', 200], [.35, '#0a0a1c', '#22d3ee', 150], [.6, '#06060f', '#f0abfc', 100]] as [number, string, string, number][]) {
@@ -54,6 +56,15 @@ export class GameEngine {
       this.render(); this.raf = requestAnimationFrame(loop)
     }
     this.raf = requestAnimationFrame(loop)
+  }
+  resize(cw: number, ch: number) {
+    const dpr = Math.min(window.devicePixelRatio || 1, this.q < 1 ? 1.5 : 2)
+    const pw = Math.max(1, Math.round(cw * dpr)), ph = Math.max(1, Math.round(ch * dpr))
+    if (this.cv.width !== pw || this.cv.height !== ph) { this.cv.width = pw; this.cv.height = ph }
+    this.vw = clamp(H * pw / ph, 720, WORLD)
+    this.s = Math.min(pw / this.vw, ph / H)
+    this.ox = (pw - this.vw * this.s) / 2; this.oy = (ph - H * this.s) / 2
+    this.cam.x = clamp(this.cam.x, 0, WORLD - this.vw)
   }
   stop() { cancelAnimationFrame(this.raf); this.in1.detach(); this.in2.detach() }
 
@@ -98,17 +109,17 @@ export class GameEngine {
     this.texts.forEach(t => { t.y -= 45 * dt; t.life -= dt }); this.texts = this.texts.filter(t => t.life > 0)
     this.rings.forEach(r => { r.r += 700 * dt; r.life -= dt }); this.rings = this.rings.filter(r => r.life > 0)
     const [a, b] = this.f
-    this.cam.x += (clamp((a.x + b.x) / 2 - W / 2, 0, WORLD - W) - this.cam.x) * Math.min(1, dt * 6)
+    this.cam.x += (clamp((a.x + b.x) / 2 - this.vw / 2, 0, WORLD - this.vw) - this.cam.x) * Math.min(1, dt * 6)
     this.zoomT -= dt
     const tz = this.zoomT > 0 ? 1.18 : this.phase === 'ko' ? 1.1 : 1
     this.cam.zoom += (tz - this.cam.zoom) * Math.min(1, dt * 8)
     this.cam.shake *= Math.pow(.001, dt); this.flash = Math.max(0, this.flash - dt * 1.5)
-    if (Math.random() < .25 * this.cfg.settings.quality) this.parts.emit(this.cam.x + Math.random() * W, FLOOR - Math.random() * 300, 1, { color: ['#22d3ee', '#e879f9'], speed: 12, life: 3, size: 2, g: -8 })
+    if (Math.random() < .25 * this.q) this.parts.emit(this.cam.x + Math.random() * this.vw, FLOOR - Math.random() * 300, 1, { color: ['#22d3ee', '#e879f9'], speed: 12, life: 3, size: 2, g: -8 })
   }
 
   private em(f: Fx, x: number, y: number, n: number, speed: number, extra: { dir?: number; spread?: number } = {}) {
     const id = f.def.id, cols = id === 'titan' ? ['#a8a29e', '#78716c', '#d6b77a'] : id === 'raven' ? [f.def.c1, f.def.c2, '#1e1b4b'] : [f.def.c1, f.def.c2, '#fde047']
-    this.parts.emit(x, y, Math.max(1, Math.round(n * this.cfg.settings.quality)), { color: cols, speed, size: id === 'titan' ? 8 : 6, life: .7, g: id === 'titan' ? 900 : id === 'kairo' ? -150 : 0, ...extra })
+    this.parts.emit(x, y, Math.max(1, Math.round(n * this.q)), { color: cols, speed, size: id === 'titan' ? 8 : 6, life: .7, g: id === 'titan' ? 900 : id === 'kairo' ? -150 : 0, ...extra })
   }
   private shake(v: number) { this.cam.shake = Math.max(this.cam.shake, v) }
 
@@ -158,9 +169,10 @@ export class GameEngine {
     if (f.ko) f.vx *= Math.pow(.05, d)
     f.vy += GRAV * d; f.x += f.vx * d; f.y += f.vy * d
     if (f.y >= FLOOR) { if (!f.ground && f.vy > 400) this.em(f, f.x, FLOOR, 5, 100, { dir: -Math.PI / 2, spread: 3 }); f.y = FLOOR; f.vy = 0; f.ground = true }
-    f.x = clamp(f.x, Math.max(50, this.cam.x + 40), Math.min(WORLD - 50, this.cam.x + W - 40))
+    f.x = clamp(f.x, Math.max(50, this.cam.x + 40), Math.min(WORLD - 50, this.cam.x + this.vw - 40))
     const dx = o.x - f.x, min = (f.def.w + o.def.w) / 2
     if (Math.abs(dx) < min && Math.abs(o.y - f.y) < 80) f.x -= Math.sign(dx || 1) * (min - Math.abs(dx)) * .5
+    f.x = clamp(f.x, Math.max(50, this.cam.x + 40), Math.min(WORLD - 50, this.cam.x + this.vw - 40))
   }
 
   private tryHit(f: Fx, o: Fx, m: Move) {
@@ -229,16 +241,16 @@ export class GameEngine {
 
   private render() {
     const g = this.g
-    g.save(); g.clearRect(0, 0, W, H)
+    g.setTransform(1, 0, 0, 1, 0, 0); g.clearRect(0, 0, this.cv.width, this.cv.height); g.save(); g.setTransform(this.s, 0, 0, this.s, this.ox, this.oy); g.beginPath(); g.rect(0, 0, this.vw, H); g.clip()
     const sk = this.cfg.settings.shake ? this.cam.shake : 0
-    g.translate(W / 2, H / 2); g.scale(this.cam.zoom, this.cam.zoom); g.translate(-W / 2 + (Math.random() - .5) * sk, -H / 2 + (Math.random() - .5) * sk)
+    g.translate(this.vw / 2, H / 2); g.scale(this.cam.zoom, this.cam.zoom); g.translate(-this.vw / 2 + (Math.random() - .5) * sk, -H / 2 + (Math.random() - .5) * sk)
     const sky = g.createLinearGradient(0, 0, 0, FLOOR); sky.addColorStop(0, '#04040c'); sky.addColorStop(.6, '#1a0b3b'); sky.addColorStop(1, '#4a1250')
-    g.fillStyle = sky; g.fillRect(-60, -60, W + 120, FLOOR + 60)
+    g.fillStyle = sky; g.fillRect(-60, -60, this.vw + 120, FLOOR + 60)
     g.fillStyle = '#f0abfc33'; g.beginPath(); g.arc(720 - this.cam.x * .05, 120, 60, 0, 7); g.fill(); g.fillStyle = '#fbcfe8'; g.beginPath(); g.arc(720 - this.cam.x * .05, 120, 40, 0, 7); g.fill()
     for (const L of this.bg) {
       const ox = -this.cam.x * L.f
       for (const b of L.b) {
-        const bx = b.x + ox; if (bx > W + 20 || bx + b.w < -20) continue
+        const bx = b.x + ox; if (bx > this.vw + 20 || bx + b.w < -20) continue
         g.fillStyle = L.c; g.fillRect(bx, FLOOR - b.h, b.w, b.h)
         g.fillStyle = L.n; g.globalAlpha = .9; g.fillRect(bx, FLOOR - b.h, b.w, 2); g.globalAlpha = .55
         for (const [wx, wy] of b.win) g.fillRect(bx + wx, FLOOR - b.h + wy, 6, 8)
@@ -263,7 +275,7 @@ export class GameEngine {
     const ox = -this.cam.x * 1.4
     for (const x of [60, 620, 1180, 1700]) { g.fillStyle = '#04040a'; g.fillRect(x + ox, H - 46, 90, 46); g.fillStyle = '#22d3ee88'; g.fillRect(x + ox, H - 46, 90, 2) }
     g.restore()
-    this.hud()
+    g.save(); g.setTransform(this.s, 0, 0, this.s, this.ox, this.oy); this.hud(); g.restore()
   }
 
   private drawF(g: CanvasRenderingContext2D, f: Fx) {
@@ -299,8 +311,9 @@ export class GameEngine {
 
   private hud() {
     const g = this.g, [a, b] = this.f
+    const BW = Math.min(400, (this.vw - 250) / 2)
     const bar = (f: Fx, x: number, right: boolean) => {
-      const bw = 400, k = f.hp / f.def.hp
+      const bw = BW, k = f.hp / f.def.hp
       this.tx(f.def.name, right ? x + bw : x, 20, 18, '#fff', right ? 'right' : 'left')
       g.fillStyle = '#000a'; g.fillRect(x, 26, bw, 20)
       const gr = g.createLinearGradient(x, 0, x + bw, 0); gr.addColorStop(0, f.def.c1); gr.addColorStop(1, f.def.c2); g.fillStyle = gr
@@ -312,17 +325,18 @@ export class GameEngine {
       this.tx(`K ${cd(f.cd.s1)}   L ${cd(f.cd.s2)}${f.ult >= 100 ? '   ULT READY' : ''}`, right ? x + bw : x, 78, 13, '#cbd5e1', right ? 'right' : 'left')
       if (f.combo >= 2) this.tx(`${f.combo} HIT COMBO`, right ? x + bw : x, 130, 26, '#fde047', right ? 'right' : 'left')
     }
-    bar(a, 30, false); bar(b, W - 430, true)
-    this.tx(String(Math.max(0, Math.ceil(this.timer))), W / 2, 50, 30)
-    for (let i = 0; i < 2; i++) { g.fillStyle = a.wins > i ? a.def.c1 : '#fff3'; g.beginPath(); g.arc(W / 2 - 24 - i * 18, 70, 6, 0, 7); g.fill(); g.fillStyle = b.wins > i ? b.def.c1 : '#fff3'; g.beginPath(); g.arc(W / 2 + 24 + i * 18, 70, 6, 0, 7); g.fill() }
+    bar(a, 30, false); bar(b, this.vw - 30 - BW, true)
+    this.tx('ZHUU CLASH', this.vw / 2, 12, 11, '#67e8f9')
+    this.tx(String(Math.max(0, Math.ceil(this.timer))), this.vw / 2, 50, 30)
+    for (let i = 0; i < 2; i++) { g.fillStyle = a.wins > i ? a.def.c1 : '#fff3'; g.beginPath(); g.arc(this.vw / 2 - 24 - i * 18, 70, 6, 0, 7); g.fill(); g.fillStyle = b.wins > i ? b.def.c1 : '#fff3'; g.beginPath(); g.arc(this.vw / 2 + 24 + i * 18, 70, 6, 0, 7); g.fill() }
     const cy = H / 2 - 20
     if (this.phase === 'intro') {
-      this.tx(`ROUND ${this.round}`, W / 2, cy - 50, 34, '#67e8f9')
-      this.tx(this.pt > .8 ? String(Math.ceil(this.pt - .8)) : 'FIGHT!', W / 2, cy + 20, 80, '#fde047')
-    } else if (this.phase === 'ko') this.tx('KO!', W / 2, cy + 20, 110, '#ef4444')
+      this.tx(`ROUND ${this.round}`, this.vw / 2, cy - 50, 34, '#67e8f9')
+      this.tx(this.pt > .8 ? String(Math.ceil(this.pt - .8)) : 'FIGHT!', this.vw / 2, cy + 20, 80, '#fde047')
+    } else if (this.phase === 'ko') this.tx('KO!', this.vw / 2, cy + 20, 110, '#ef4444')
     else if (this.phase === 'round' || this.phase === 'done') {
-      this.tx('ROUND WIN', W / 2, cy, 64, '#fde047'); this.tx(`${a.def.name} ${a.wins} - ${b.wins} ${b.def.name}`, W / 2, cy + 44, 26)
+      this.tx('ROUND WIN', this.vw / 2, cy, 64, '#fde047'); this.tx(`${a.def.name} ${a.wins} - ${b.wins} ${b.def.name}`, this.vw / 2, cy + 44, 26)
     }
-    if (this.flash > 0) { g.fillStyle = `rgba(255,255,255,${this.flash * .6})`; g.fillRect(0, 0, W, H) }
+    if (this.flash > 0) { g.fillStyle = `rgba(255,255,255,${this.flash * .6})`; g.fillRect(0, 0, this.vw, H) }
   }
 }
