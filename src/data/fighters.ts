@@ -1,0 +1,11 @@
+export interface Move { name: string; dmg: number; range: number; cd: number; kb: number; dur: number; dash?: number; launch?: number; h?: number }
+export interface FighterDef { id: string; name: string; role: string; theme: string; desc: string; c1: string; c2: string; hp: number; atk: number; def: number; spd: number; w: number; h: number; moves: Record<'atk' | 's1' | 's2' | 'ult', Move> }
+export const FIGHTERS: FighterDef[] = [
+  { id: 'kairo', name: 'KAIRO', role: 'Balanced Fighter', theme: 'Fire / Martial Arts', desc: 'A young martial artist who channels red-orange flame through every strike.', c1: '#ff5a1f', c2: '#ffb347', hp: 100, atk: 75, def: 65, spd: 85, w: 60, h: 150,
+    moves: { atk: { name: 'Punch / Kick', dmg: 8, range: 78, cd: .28, kb: 160, dur: .26 }, s1: { name: 'Flame Dash', dmg: 14, range: 90, cd: 3, kb: 260, dur: .35, dash: 700 }, s2: { name: 'Rising Fire', dmg: 16, range: 80, cd: 4, kb: 120, dur: .45, launch: 700 }, ult: { name: 'Inferno Burst', dmg: 45, range: 240, cd: 0, kb: 500, dur: .9, h: 200 } } },
+  { id: 'raven', name: 'RAVEN', role: 'Assassin', theme: 'Shadow / Dark Energy', desc: 'A masked assassin trailing purple shadow. Fragile, lethal, impossible to pin down.', c1: '#8b5cf6', c2: '#38bdf8', hp: 85, atk: 90, def: 50, spd: 100, w: 52, h: 148,
+    moves: { atk: { name: 'Shadow Slash', dmg: 9, range: 88, cd: .22, kb: 140, dur: .2 }, s1: { name: 'Shadow Dash', dmg: 12, range: 80, cd: 2.5, kb: 200, dur: .3, dash: 1000 }, s2: { name: 'Phantom Strike', dmg: 20, range: 90, cd: 4.5, kb: 300, dur: .5, dash: 700, launch: 250 }, ult: { name: 'Void Execution', dmg: 55, range: 230, cd: 0, kb: 450, dur: 1, h: 200 } } },
+  { id: 'titan', name: 'TITAN', role: 'Tank / Heavy Fighter', theme: 'Earth / Heavy Armor', desc: 'A towering armored brute. Slow, but every hit shakes the ground.', c1: '#b08d57', c2: '#f59e0b', hp: 130, atk: 95, def: 100, spd: 45, w: 90, h: 190,
+    moves: { atk: { name: 'Heavy Punch', dmg: 14, range: 100, cd: .55, kb: 260, dur: .4 }, s1: { name: 'Earth Slam', dmg: 24, range: 150, cd: 5, kb: 350, dur: .6 }, s2: { name: 'Rock Charge', dmg: 20, range: 100, cd: 4, kb: 300, dur: .5, dash: 500 }, ult: { name: 'Titan Crash', dmg: 65, range: 270, cd: 0, kb: 600, dur: 1.1, h: 220 } } },
+]
+export const byId = (id: string) => FIGHTERS.find(f => f.id === id) || FIGHTERS[0]

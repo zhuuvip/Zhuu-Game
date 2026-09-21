@@ -1,0 +1,6 @@
+@import "tailwindcss";
+html,body{background:#05060f;overscroll-behavior:none}
+@keyframes shift{0%{background-position:0% 50%}50%{background-position:100% 50%}100%{background-position:0% 50%}}
+.bg-anim{background:linear-gradient(120deg,#05060f,#1e0b45,#04141f,#05060f);background-size:300% 300%;animation:shift 14s ease infinite}
+.grid-bg{background-image:linear-gradient(#22d3ee14 1px,transparent 1px),linear-gradient(90deg,#22d3ee14 1px,transparent 1px);background-size:44px 44px}
+.neon{text-shadow:0 0 18px #22d3ee99,0 0 40px #a855f766}
